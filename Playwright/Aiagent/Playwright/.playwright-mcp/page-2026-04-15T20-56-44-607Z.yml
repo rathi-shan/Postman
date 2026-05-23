@@ -1,0 +1,127 @@
+- generic [ref=e2]:
+  - banner [ref=e3]:
+    - link [ref=e196] [cursor=pointer]:
+      - /url: https://demoqa.com
+      - img [ref=e197]
+  - generic [ref=e6]:
+    - generic [ref=e9]:
+      - generic [ref=e12] [cursor=pointer]:
+        - generic [ref=e13]:
+          - img [ref=e15]
+          - text: Elements
+        - img [ref=e20]
+      - generic [ref=e22]:
+        - generic [ref=e24] [cursor=pointer]:
+          - generic [ref=e25]:
+            - img [ref=e27]
+            - text: Forms
+          - img [ref=e33]
+        - list [ref=e36]:
+          - listitem [ref=e37] [cursor=pointer]:
+            - link "Practice Form" [ref=e38]:
+              - /url: /automation-practice-form
+              - img [ref=e39]
+              - text: Practice Form
+      - generic [ref=e43] [cursor=pointer]:
+        - generic [ref=e44]:
+          - img [ref=e46]
+          - text: Alerts, Frame & Windows
+        - img [ref=e51]
+      - generic [ref=e55] [cursor=pointer]:
+        - generic [ref=e56]:
+          - img [ref=e58]
+          - text: Widgets
+        - img [ref=e64]
+      - generic [ref=e68] [cursor=pointer]:
+        - generic [ref=e69]:
+          - img [ref=e71]
+          - text: Interactions
+        - img [ref=e76]
+      - generic [ref=e80] [cursor=pointer]:
+        - generic [ref=e81]:
+          - img [ref=e83]
+          - text: Book Store Application
+        - img [ref=e88]
+    - generic [ref=e91]:
+      - heading "Practice Form" [level=1] [ref=e92]
+      - heading "Student Registration Form" [level=5] [ref=e93]
+      - generic [ref=e94]:
+        - generic [ref=e95]:
+          - generic [ref=e97]: Name
+          - textbox "First Name" [ref=e99]: John Doe
+          - textbox "Last Name" [ref=e101]
+        - generic [ref=e102]:
+          - generic [ref=e104]: Email
+          - textbox "name@example.com" [ref=e106]: john@example.com
+        - generic [ref=e107]:
+          - generic [ref=e108]: Gender
+          - generic [ref=e109]:
+            - generic [ref=e110]:
+              - radio "Male" [ref=e111]
+              - generic [ref=e112]: Male
+            - generic [ref=e113]:
+              - radio "Female" [ref=e114]
+              - generic [ref=e115]: Female
+            - generic [ref=e116]:
+              - radio "Other" [ref=e117]
+              - generic [ref=e118]: Other
+        - generic [ref=e119]:
+          - generic [ref=e121]: Mobile(10 Digits)
+          - textbox "Mobile Number" [ref=e123]
+        - generic [ref=e124]:
+          - generic [ref=e126]: Date of Birth
+          - textbox [ref=e130]: 15 Apr 2026
+        - generic [ref=e131]:
+          - generic [ref=e133]: Subjects
+          - generic [ref=e135]:
+            - log [ref=e137]
+            - combobox [ref=e141]
+        - generic [ref=e144]:
+          - generic [ref=e146]: Hobbies
+          - generic [ref=e147]:
+            - generic [ref=e148]:
+              - checkbox "Sports" [ref=e149]
+              - generic [ref=e150]: Sports
+            - generic [ref=e151]:
+              - checkbox "Reading" [ref=e152]
+              - generic [ref=e153]: Reading
+            - generic [ref=e154]:
+              - checkbox "Music" [ref=e155]
+              - generic [ref=e156]: Music
+        - generic [ref=e157]:
+          - generic [ref=e159]: Picture
+          - button "Choose File" [ref=e161] [cursor=pointer]
+        - generic [ref=e162]:
+          - generic [ref=e164]: Current Address
+          - textbox "Current Address" [active] [ref=e166]: I would like to know more about your services
+        - generic [ref=e167]:
+          - generic [ref=e169]: State and City
+          - generic [ref=e171]:
+            - log [ref=e173]
+            - generic [ref=e174]:
+              - generic [ref=e175]:
+                - generic [ref=e176]: Select State
+                - combobox [ref=e178]
+              - img [ref=e182]
+          - generic [ref=e184]:
+            - generic:
+              - log
+              - generic:
+                - generic:
+                  - generic: Select City
+                - generic:
+                  - generic:
+                    - img
+        - button "Submit" [ref=e187] [cursor=pointer]
+    - iframe [ref=e200]:
+      - generic [ref=f9e2]:
+        - link "Advertisement" [ref=f9e4] [cursor=pointer]:
+          - /url: https://ad.doubleclick.net/pcs/click?xai=AKAOjsu-1yUg0MYr202reZXIuMsILgLLKFyt_qh6cvsaZ28rRiNysJNT0feNCnagN3cl8tpwzEKClmnghXcjpS0RNZgjudTlcFp_c806-RKofx0_E6YhdAWzxjBm7QqXz0g1lBCLduRdT5c8mjcv_EXFAvLoNMoz6htJnjvhsABa6MhwBev87qlvJNX3Aycl_Dc6EeTX63cwaqqWkP98IrxIH33_98gbzv50xVIOyopU-nYeSET-h_7FPK0rtIeokhsD63X4l9UfbOJuxKG1DJLhepBL7egdTVc2LthV0K0rTTWt7rbRv4YUz0X4GirAQLWBxQ6Irch67ctYNpZPEQL2nFAhDn7PffvN1XyzD16xuGP5abiPSOXbwbb_UXvYo8-LreKNkNu_C0Zon1gJOowyLrFYAwXlD47mUbBMo5bd23X2QaXUC5YNVzfYw2nhGBc35dQDTUC7tbAXlRL6_j_bLRKxZxh95fDAcLbYPktJRmNOC9O9gzOGBfoYm2n_DDlt8vvtEzBlTgXjKf_vf0TRjDEx9aNMm_9eLX9ikcVTiwRqssrR9XWpbYOUIpZQFSTNWWAhhLlVP_QRfkx55IbSpyQH6X7a6EyTsXnhNYNSrJkSZkP-jSnzyUhnN9FYrrHdMuMsCQl4tm-bj0_QmO0bC3WdBRxDSumc_FP1P6JEQWGtCA2bPKxxCcGHH6cgHLWy5cMmQ2K-32jjghYD8iAPvU8x6JvewS2j9E2F3JQJEW7LjFQpYwQ0WctmdZ6UFyPx7IzAhkmVcjJ_fHmcVfNKvrjhgHg3Y624VzaL_ehRgr1tisuugdIayFyEWBGtMTvkrhcYETiOilZZm4VBublCqFHHW35VVKSFIolZSlQv_kVvrDAjDbjd1-yc4sgB8kWuTehLWKLto-7z9ZKUymee0D4Pe-6LQ2gManTjUmus7XNgWAm0MBNIquSZVrimij__FwGDa2tbIMkE-zEF9siT3Xa57I14jh9jnJOOSoKbdPYddy-ltK6rGJho063x5_BVo1TI1rJvqn3OM89vlWfIYb1q20Nl31S1SGB69i4KiuL8N8R5BOJO_ctuVmFFKduudqHdyKYgH9YdVYAu70ngjUYjBqnQuf7bdpvT0cvYLXsE9JCevQwFdKy3E-KYInB9fuB90WH3TQcljQARKV4FbKZCsdHd8wdDwXspiUmaAvlFClmQWrKwCMu7V8XfxMl8uScd6eMMffo2qKbquekAl3dYS6Uu_slkh0E1xEzO4kp2GNP-2bctr6aA6ngxHCHsaI-cOHFHgv3RGOvlnGQqRMEARzxqGqdThTHB0eBiOY7X_NvdG0oT9z22l9yh-Ub2PLjbKdTAS30lbngID4x_-73stF-iTTZ6arND40O4b2_KIHHkZqaHGYnUlSoxOhQmoc0uQlpigcAcb4iL3JqW_qqEQxeoYWJV_4Mxhqe_zvcvw8M3-kxQcc33Yy1VloAdU7OHqwDqYp31XlGZkOEx1WzPd0vLH8ToJA5dVP06BibtkQO0AscriKQR-pxwo1WU2jrl37rXCQk4JZUyalREdkGx4ZCK8JoU8EXwHwyh3XiKf7yQikj4N9MVJzVqtUkbL4KtnWUdzwcQwd2voCuu7PTLlGZYjmtMdfdEbS8MNEVSv2CRK7rjvbQnSLcGzM60OOTh9LHoaIJY-bD1wW5D_LNLDOzsYOxJeJP62oam8EYlzoXdR047ef1FVAejEtKEdCerbL-QIx2KyntS2Pa4BxcKWr_0lVtqo5v-e3SNFl6eYxNGmUzYfOsGrB47XMkvR3gTPnl5wfuidPHOXYjK9ce5U3GL_4P7j3YRiUJ7rWjIZ8fzSl2yLxuDXKq3ANVrv1jBNN6AYE1tA-vX79kL-dtSyGTymhN5IUm9euI1ahk&sai=AMfl-YSz7-NkShMxqobgjbhthOoOGTGDAfCEfPSQ3W-iPxpgHUIKEgtjL27o2FvI9mbbGZiQUmSo6pgRYWc6hVTVQ1Yi5zumJzJ0en96A9ADp7oWMsmJOIwZewSZSaumYWcEXXWJ3TqACFC6d5WMlvk0HIkI3VYi_vsAbJWZVd4KbokQFUtX4B-28D3szMhIz5RbCdiYcAIVBEmQPOw8d5ALS4Kk4AvJuYiRdhrkFGveIzfjFkn4dgj_BHQrgEzWf1S3swWOvkpYJTUkarx_Jt8FN3d29D2PRsDqfEyuifytbCpMk74fUTbtMUv6p4pwmhtRozMuKDg1gTqG2M3ZJ332ZfeI8Gpj_5ooq7A2sa2LVV71u0YYeIy5QtvZLIvOAcxoQfbqphMAv4SCqi2gSGsoSTf8HCQZUzaPeN-D1OnH309kGrWaM_645uZp6MvHldl8yli9Ae_bcqL1bOyMMgEC_8jJyT2ZFNatacy75-zj-NJvgKvkaCQ4wSTWtb9GD_UyPlNZOjJ_6Bgc2rp2cDLEbJqVz7HqiPS6PFPTCblIW7TNx_qeHCYuWG8oZRNarcka3Xh-Pq4vOohouoYsirEc4jTgzV5T5VjvTrghQYszFACWbaiwPTR7HHZPqS_8Qzhzz898QiWLQWFEMurAs3Cob9gc_IEfmoBPy3njs45tgYHJ_i42sLvZsm6Pyax9NRg3RDfgV1Me6G9YNPoj6t8GZ6HFg2h6Q3JBhhuBU32ZRE60u_2eS6ODjaWeW8OdvP7s3G5iK6m1TWXS8Iqsnqkw9QL6sA02CLyzjlRTjvujWAU6JdnBYHPlPpTKsalZC1ic3QpTEtbY6JxvMTKrs3fWvUtpWOH26kZqS5qUti7qIlofSx-F4J9aLfoNLQ6IuztaAZeIh16gbw&sig=Cg0ArKJSzEUyvsyi-XIT&fbs_aeid=%5Bgw_fbsaeid%5D&crd=aHR0cHM6Ly9vbnRhcmlvLmNh&urlfix=1&adurl=https://www.ontario.ca/page/ontario-corps%3Futm_source%3DDV360%26utm_medium%3DDISPLAY%26utm_campaign%3DMEPR-2627-00002-DIG-ONTARIO-CORPS%26utm_content%3DDIS-EN%26dclid%3D%25edclid!%26gad_source%3D7%26gad_campaignid%3D23700298714
+          - img "Advertisement" [ref=f9e5]
+        - generic [ref=f9e6]:
+          - generic:
+            - img [ref=f9e10] [cursor=pointer]
+            - button [ref=f9e13] [cursor=pointer]:
+              - img [ref=f9e14]
+  - contentinfo [ref=e194]:
+    - generic [ref=e195]: © 2013-2026 TOOLSQA.COM | ALL RIGHTS RESERVED.

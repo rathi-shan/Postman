@@ -1,0 +1,34 @@
+services:
+  hlm-postgres:
+    image: postgres:11-alpine
+    container_name: hlm-postgres
+    ports:
+      - "5432:5432"
+    environment:
+      - POSTGRES_USER=healenium
+      - POSTGRES_PASSWORD=healenium
+      - POSTGRES_DB=healenium
+
+  hlm-backend:
+    image: healenium/hlm-backend:3.5.1
+    container_name: hlm-backend
+    ports:
+      - "7878:7878"
+    depends_on:
+      - hlm-postgres
+    environment:
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://hlm-postgres:5432/healenium
+      - SPRING_DATASOURCE_USERNAME=healenium
+      - SPRING_DATASOURCE_PASSWORD=healenium
+
+  version: '3.8'
+  services:
+    playwright-node:
+      image: mcr.microsoft.com/playwright:v1.48.0-focal
+      ports:
+        - "4444:4444"
+      environment:
+        - PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD=1
+        - PW_SERVER_SKIP_VERSION_CHECK=1 # Some images recognize this
+      # Start the server properly as a playwright-specific process
+      command: npx playwright run-server --port 4444 --address /

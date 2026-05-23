@@ -1,0 +1,17 @@
+.env.env 
+node_modules/ 
+target/ 
+.gradle/ 
+build/ 
+.idea/ 
+.vscode/ 
+test-output/ 
+playwright-report/ 
+node_modules/ 
+target/ 
+.gradle/ 
+build/ 
+.idea/ 
+.vscode/ 
+test-output/ 
+playwright-report/ 

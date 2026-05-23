@@ -1,0 +1,103 @@
+import streamlit as st
+import os
+import pandas as pd
+import gspread
+from google.oauth2.service_account import Credentials
+from langchain_groq import ChatGroq
+from langchain_experimental.agents.agent_toolkits import create_pandas_dataframe_agent
+
+# --- 1. PAGE CONFIGURATION ---
+st.set_page_config(page_title="Financial Intelligence Agent", page_icon="💰", layout="wide")
+
+st.title("💰 Financial Analysis Agent")
+st.markdown("""
+    Ask complex questions across your **Transactions**, **Liabilities**, and **Investments**.
+    *Example: "What is my net worth?" or "Which loan has the highest interest rate?"*
+""")
+
+# --- 2. DATA & AGENT INITIALIZATION ---
+# Use cache_resource so we don't reload the data on every button click
+@st.cache_resource
+def initialize_financial_system():
+    # Set your API Key here
+    os.environ["GROQ_API_KEY"] = "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"
+    
+    # Path setup
+    base_path = os.path.dirname(os.path.abspath(__file__))
+    creds_path = os.path.join(base_path, "credentials.json")
+    scopes = ["https://www.googleapis.com/auth/spreadsheets", "https://www.googleapis.com/auth/drive"]
+
+    # Google Sheets Authentication
+    creds = Credentials.from_service_account_file(creds_path, scopes=scopes)
+    gc = gspread.authorize(creds)
+    spreadsheet = gc.open("Financial_Agent_Training_Data_V1")
+
+    # Load Dataframes from separate tabs
+    df_trans = pd.DataFrame(spreadsheet.worksheet("Transactions").get_all_records())
+    df_liab  = pd.DataFrame(spreadsheet.worksheet("Liabilities").get_all_records())
+    df_invest = pd.DataFrame(spreadsheet.worksheet("Investments").get_all_records())
+
+    # Initialize the LLM (Llama 3.3 is the current stable version)
+    llm = ChatGroq(model_name="llama-3.3-70b-versatile", temperature=0)
+
+    # Create the Agent with Error Handling
+    # df[0] = Transactions, df[1] = Liabilities, df[2] = Investments
+    agent = create_pandas_dataframe_agent(
+        llm, 
+        [df_trans, df_liab, df_invest], 
+        verbose=True, 
+        allow_dangerous_code=True,
+        handle_parsing_errors=True # Crucial for Llama stability
+    )
+    
+    return {
+        "agent": agent,
+        "transactions": df_trans,
+        "liabilities": df_liab,
+        "investments": df_invest
+    }
+
+# Load the system
+try:
+    data_bundle = initialize_financial_system()
+    st.sidebar.success("✅ Connected to Google Sheets")
+except Exception as e:
+    st.error(f"Failed to connect: {e}")
+    st.stop()
+
+# --- 3. CHAT INTERFACE ---
+user_query = st.text_input("Enter your financial question:", placeholder="e.g., Calculate my total debt interest paid YTD.")
+
+if user_query:
+    with st.spinner("Agent is thinking... (Check VS Code terminal for thought process)"):
+        try:
+            # Execute the query
+            result = data_bundle["agent"].invoke(user_query)
+            
+            # Display results
+            st.success("Analysis Complete!")
+            st.markdown("### Agent Answer")
+            st.write(result["output"])
+            
+        except Exception as e:
+            st.error(f"An error occurred during analysis: {e}")
+
+# --- 4. DATA VISUALIZATION ---
+st.divider()
+with st.expander("📊 View Raw Financial Data"):
+    col1, col2, col3 = st.columns(3)
+    
+    with col1:
+        st.write("**Transactions**")
+        st.dataframe(data_bundle["transactions"], hide_index=True)
+    
+    with col2:
+        st.write("**Liabilities**")
+        st.dataframe(data_bundle["liabilities"], hide_index=True)
+        
+    with col3:
+        st.write("**Investments**")
+        st.dataframe(data_bundle["investments"], hide_index=True)
+
+st.sidebar.markdown("---")
+st.sidebar.info("Model: Llama-3.3-70b via Groq")
