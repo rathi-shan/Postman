@@ -1,0 +1,15 @@
+# Secrets and Environment Configs
+.env
+.env.*
+
+# Python compilation files
+__pycache__/
+*.pyc
+
+# Node dependencies and test runner results
+node_modules/
+package-lock.json
+test-results/
+playwright-report/
+blob-report/
+playwright/.cache/

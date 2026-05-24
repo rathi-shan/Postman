@@ -8,118 +8,105 @@ Feature: Biometric Bi-weekly Authentication Bypass Lockout
   # HAPPY PATH SCENARIOS
   # ============================================================
 
-  Scenario: Successful FaceID login on the first attempt clears any prior failed attempt counter
-    Given the user has a registered FaceID profile linked to their mobile banking account
-    And the user has previously failed FaceID authentication 1 time
-    And the account is not currently locked
-    When the user presents a valid biometric face scan
-    Then the application should authenticate the user successfully
-    And the user should be granted access to the mobile banking dashboard
+  Scenario: Successful FaceID login on first attempt clears any prior failed attempt counter
+    Given a registered mobile banking user with FaceID enabled
+    And the user has 1 previously recorded failed FaceID attempt
+    When the user successfully authenticates via FaceID
+    Then the user should be granted access to the mobile banking dashboard
     And the consecutive failed FaceID attempt counter should be reset to 0
-    And no lockout warning notification should be dispatched
+    And no lockout warning push notification should be dispatched
 
-  Scenario: Successful FaceID login on the second attempt after one failure resets the counter
-    Given the user has a registered FaceID profile linked to their mobile banking account
-    And the user has previously failed FaceID authentication 1 time
-    And the account is not currently locked
-    When the user presents a valid biometric face scan on the second attempt
-    Then the application should authenticate the user successfully
-    And the user should be granted access to the mobile banking dashboard
+  Scenario: Successful FaceID login on second attempt after one failure grants access and resets counter
+    Given a registered mobile banking user with FaceID enabled
+    And the user has 1 previously recorded failed FaceID attempt
+    When the user successfully authenticates via FaceID on the next attempt
+    Then the user should be granted full access to the mobile banking application
     And the consecutive failed FaceID attempt counter should be reset to 0
-    And any pending lockout warning state should be cleared
+    And the account status should remain "active" and unlocked
 
-  Scenario: System administrator successfully unlocks a locked account via the secure admin dashboard
-    Given a user account is currently locked due to 3 consecutive failed FaceID attempts
+  Scenario: Administrator successfully unlocks a locked account via the secure admin dashboard
+    Given a mobile banking user account is currently locked due to 3 consecutive failed FaceID attempts
     And a system administrator is authenticated on the secure admin dashboard
-    When the administrator locates the locked user profile by account ID
-    And the administrator triggers the manual unlock override action
-    Then the user account status should be updated to unlocked
+    When the administrator locates the locked user profile
+    And the administrator applies a manual override unlock action on the profile
+    Then the user account status should be updated to "active" and unlocked
     And the consecutive failed FaceID attempt counter should be reset to 0
-    And the lockout timer should be cleared immediately
-    And the user should be able to attempt FaceID authentication again
-    And an audit log entry should be recorded capturing the administrator ID, timestamp, and override action
+    And the lockout timer should be cleared immediately regardless of remaining duration
+    And an audit log entry should be recorded capturing the administrator ID, timestamp, and action taken
 
-  Scenario: Account lockout expires automatically after exactly 15 minutes and user can re-authenticate
-    Given a user account has been locked due to 3 consecutive failed FaceID attempts
-    And the lockout timer has been running for exactly 15 minutes
-    When the lockout duration of 15 minutes elapses
-    Then the account should be automatically unlocked by the system
+  Scenario: Account lockout expires automatically after exactly 15 minutes and user can authenticate
+    Given a mobile banking user account was locked due to 3 consecutive failed FaceID attempts
+    And exactly 15 minutes have elapsed since the lockout was imposed
+    When the user attempts FaceID authentication
+    Then the account should be automatically unlocked
+    And the user should be permitted to attempt FaceID authentication again
     And the consecutive failed FaceID attempt counter should be reset to 0
-    And the user should be able to attempt FaceID authentication again without administrator intervention
 
   # ============================================================
   # SAD PATH / EDGE CASE SCENARIOS
   # ============================================================
 
   Scenario: Warning push notification is dispatched on exactly the 2nd consecutive failed FaceID attempt
-    Given the user has a registered FaceID profile linked to their mobile banking account
-    And the user has previously failed FaceID authentication 1 time
-    And the account is not currently locked
-    And push notifications are enabled for the mobile banking application
-    When the user presents an invalid biometric face scan for the 2nd consecutive time
-    Then the FaceID authentication should fail
+    Given a registered mobile banking user with FaceID enabled
+    And the user has 1 previously recorded failed FaceID attempt
+    And the user has push notifications enabled on their device
+    When the user fails FaceID authentication for the 2nd consecutive time
+    Then the user should NOT be locked out of the account
     And a warning push notification should be dispatched immediately to the user's registered device
-    And the warning notification message should indicate that one more failed attempt will lock the account
-    And the account should remain unlocked
+    And the push notification message should warn the user that one more failed attempt will lock the account
     And the consecutive failed FaceID attempt counter should be incremented to 2
 
   Scenario: Account is locked immediately and precisely on the 3rd consecutive failed FaceID attempt
-    Given the user has a registered FaceID profile linked to their mobile banking account
-    And the user has previously failed FaceID authentication 2 consecutive times
-    And a warning push notification has already been dispatched
-    And the account is not currently locked
-    When the user presents an invalid biometric face scan for the 3rd consecutive time
-    Then the FaceID authentication should fail
-    And the account should be locked immediately
-    And the 15-minute lockout countdown timer should start at the moment of the 3rd failure
-    And the user should be presented with a message stating the account is locked for 15 minutes
-    And the user should not be able to attempt FaceID authentication while the account is locked
+    Given a registered mobile banking user with FaceID enabled
+    And the user has 2 previously recorded consecutive failed FaceID attempts
+    When the user fails FaceID authentication for the 3rd consecutive time
+    Then the account should be locked immediately
+    And the user should be denied access to the mobile banking application
+    And an account lockout push notification should be dispatched to the user's registered device
+    And the lockout duration should be set to exactly 15 minutes from the moment of the 3rd failure
     And the consecutive failed FaceID attempt counter should reflect 3 failed attempts
 
-  Scenario: Account remains locked if the user attempts FaceID authentication before the 15-minute lockout expires
-    Given a user account has been locked due to 3 consecutive failed FaceID attempts
-    And the lockout timer has been running for only 7 minutes and 30 seconds
-    When the user attempts FaceID authentication before the 15-minute lockout period has elapsed
+  Scenario: Account remains locked if user attempts FaceID authentication before the 15-minute lockout expires
+    Given a mobile banking user account is currently locked due to 3 consecutive failed FaceID attempts
+    And only 14 minutes and 59 seconds have elapsed since the lockout was imposed
+    When the user attempts FaceID authentication
     Then the authentication attempt should be rejected without processing the biometric scan
-    And the user should be presented with a message indicating the remaining lockout duration
+    And the user should be presented with a lockout message indicating the remaining lockout time
     And the account should remain in a locked state
-    And the lockout timer should not be reset by the premature authentication attempt
+    And the lockout timer should NOT be reset by this attempt
 
-  Scenario: Warning push notification is NOT dispatched on the 1st failed FaceID attempt
-    Given the user has a registered FaceID profile linked to their mobile banking account
-    And the consecutive failed FaceID attempt counter is at 0
-    And the account is not currently locked
-    When the user presents an invalid biometric face scan for the 1st time
-    Then the FaceID authentication should fail
+  Scenario: No push notification is dispatched on the 1st consecutive failed FaceID attempt
+    Given a registered mobile banking user with FaceID enabled
+    And the user has 0 previously recorded failed FaceID attempts
+    When the user fails FaceID authentication for the 1st consecutive time
+    Then the user should NOT be locked out of the account
     And no warning push notification should be dispatched
-    And the user should be presented with a generic authentication failure message
     And the consecutive failed FaceID attempt counter should be incremented to 1
-    And the account should remain unlocked
+    And the user should be permitted to retry FaceID authentication
 
-  Scenario: Failed FaceID attempts are not counted as consecutive when interrupted by a successful login
-    Given the user has a registered FaceID profile linked to their mobile banking account
-    And the user has previously failed FaceID authentication 2 consecutive times
-    And the user subsequently authenticated successfully resetting the counter to 0
-    When the user presents an invalid biometric face scan
-    Then the FaceID authentication should fail
-    And the consecutive failed FaceID attempt counter should be incremented to 1
-    And no warning push notification should be dispatched
-    And the account should not be locked
+  Scenario: Failed attempt counter does not increment during an active lockout period
+    Given a mobile banking user account is currently locked due to 3 consecutive failed FaceID attempts
+    And the lockout timer shows 10 minutes remaining
+    When the user attempts FaceID authentication and it is rejected due to the active lockout
+    Then the consecutive failed FaceID attempt counter should remain at 3
+    And the lockout expiry time should NOT be extended
+    And no additional push notification should be dispatched for this blocked attempt
 
-  Scenario: System administrator cannot unlock an account that is not in a locked state
-    Given a user account is currently in an active and unlocked state
-    And a system administrator is authenticated on the secure admin dashboard
-    When the administrator attempts to trigger the manual unlock override action on the active account
-    Then the system should reject the override action
-    And the administrator should be presented with an error message indicating the account is not locked
-    And the user account status should remain unchanged
-    And no audit log entry for an unlock override should be recorded
+  Scenario: Unauthorized administrator cannot perform a manual unlock override from the admin dashboard
+    Given a mobile banking user account is currently locked due to 3 consecutive failed FaceID attempts
+    And a user with non-administrator credentials attempts to access the secure admin dashboard
+    When the unauthorized user attempts to apply a manual override unlock action on the locked profile
+    Then the override action should be denied
+    And the user account should remain locked
+    And a security violation event should be logged capturing the unauthorized access attempt
+    And the legitimate account lockout state and timer should remain unchanged
 
-  Scenario: Lockout timer boundary condition - account remains locked at 14 minutes and 59 seconds
-    Given a user account has been locked due to 3 consecutive failed FaceID attempts
-    And the lockout timer has been running for 14 minutes and 59 seconds
-    When the user attempts FaceID authentication at 14 minutes and 59 seconds into the lockout
-    Then the authentication attempt should be rejected
-    And the account should remain in a locked state
-    And the system should not unlock the account until the full 15-minute duration has elapsed
+  Scenario: Consecutive failed attempt counter resets after a non-consecutive failure separated by a successful login
+    Given a registered mobile banking user with FaceID enabled
+    And the user has 2 previously recorded consecutive failed FaceID attempts
+    When the user successfully authenticates via FaceID
+    And subsequently the user fails FaceID authentication once
+    Then the consecutive failed FaceID attempt counter should be set to 1
+    And no account lockout should be triggered
+    And no warning push notification should be dispatched for this single non-consecutive failure
 ```

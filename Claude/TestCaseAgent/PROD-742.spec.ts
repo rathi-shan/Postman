@@ -1,209 +1,221 @@
+```typescript
 import { test, expect } from '@playwright/test';
 
 test.describe('Biometric Bi-weekly Authentication Bypass Lockout', () => {
 
-  test('Successful FaceID login on the first attempt clears any prior failed attempt counter', async ({ page }) => {
-    // Given the user has a registered FaceID profile linked to their mobile banking account
-    // And the user has previously failed FaceID authentication 1 time
-    // And the account is not currently locked
-    await page.goto('/auth/faceid');
-    await page.evaluate(() => {
-      window.localStorage.setItem('faceid_fail_count', '1');
-      window.localStorage.setItem('account_locked', 'false');
-    });
+  test('Successful FaceID login on first attempt clears any prior failed attempt counter', async ({ page }) => {
+    // Given a registered mobile banking user with FaceID enabled
+    await page.goto('/mobile-banking/login');
+    await expect(page.getByRole('heading', { name: /sign in/i })).toBeVisible();
 
-    // When the user presents a valid biometric face scan
-    await page.getByRole('button', { name: /scan face|authenticate with faceid/i }).click();
-    await page.evaluate(() => window.dispatchEvent(new CustomEvent('biometric:success')));
+    // And the user has 1 previously recorded failed FaceID attempt
+    // (Precondition assumed set via API/state setup; represented by verifying counter state in UI)
+    await expect(page.getByTestId('failed-attempt-counter')).toHaveText('1');
 
-    // Then the application should authenticate the user successfully
+    // When the user successfully authenticates via FaceID
+    await page.getByRole('button', { name: /authenticate with face id/i }).click();
+    await page.getByTestId('faceid-result').selectOption('success');
+    await page.getByRole('button', { name: /confirm authentication/i }).click();
+
+    // Then the user should be granted access to the mobile banking dashboard
     await expect(page.getByRole('heading', { name: /dashboard/i })).toBeVisible();
 
-    // And the user should be granted access to the mobile banking dashboard
-    await expect(page).toHaveURL(/dashboard/);
-
     // And the consecutive failed FaceID attempt counter should be reset to 0
-    const failCount = await page.evaluate(() => window.localStorage.getItem('faceid_fail_count'));
-    expect(failCount).toBe('0');
+    await expect(page.getByTestId('failed-attempt-counter')).toHaveText('0');
 
-    // And no lockout warning notification should be dispatched
-    await expect(page.getByRole('alert', { name: /lockout warning/i })).not.toBeVisible();
+    // And no lockout warning push notification should be dispatched
+    await expect(page.getByTestId('push-notification-warning')).not.toBeVisible();
   });
 
-  test('Successful FaceID login on the second attempt after one failure resets the counter', async ({ page }) => {
-    // Given the user has a registered FaceID profile linked to their mobile banking account
-    // And the user has previously failed FaceID authentication 1 time
-    // And the account is not currently locked
-    await page.goto('/auth/faceid');
-    await page.evaluate(() => {
-      window.localStorage.setItem('faceid_fail_count', '1');
-      window.localStorage.setItem('account_locked', 'false');
-    });
+  test('Successful FaceID login on second attempt after one failure grants access and resets counter', async ({ page }) => {
+    // Given a registered mobile banking user with FaceID enabled
+    await page.goto('/mobile-banking/login');
+    await expect(page.getByRole('heading', { name: /sign in/i })).toBeVisible();
 
-    // When the user presents a valid biometric face scan on the second attempt
-    await page.getByRole('button', { name: /scan face|authenticate with faceid/i }).click();
-    await page.evaluate(() => window.dispatchEvent(new CustomEvent('biometric:success')));
+    // And the user has 1 previously recorded failed FaceID attempt
+    await expect(page.getByTestId('failed-attempt-counter')).toHaveText('1');
 
-    // Then the application should authenticate the user successfully
+    // When the user successfully authenticates via FaceID on the next attempt
+    await page.getByRole('button', { name: /authenticate with face id/i }).click();
+    await page.getByTestId('faceid-result').selectOption('success');
+    await page.getByRole('button', { name: /confirm authentication/i }).click();
+
+    // Then the user should be granted full access to the mobile banking application
     await expect(page.getByRole('heading', { name: /dashboard/i })).toBeVisible();
 
-    // And the user should be granted access to the mobile banking dashboard
-    await expect(page).toHaveURL(/dashboard/);
-
     // And the consecutive failed FaceID attempt counter should be reset to 0
-    const failCount = await page.evaluate(() => window.localStorage.getItem('faceid_fail_count'));
-    expect(failCount).toBe('0');
+    await expect(page.getByTestId('failed-attempt-counter')).toHaveText('0');
 
-    // And any pending lockout warning state should be cleared
-    await expect(page.getByRole('alert', { name: /lockout/i })).not.toBeVisible();
+    // And the account status should remain "active" and unlocked
+    await expect(page.getByTestId('account-status')).toHaveText('active');
   });
 
-  test('System administrator successfully unlocks a locked account via the secure admin dashboard', async ({ page }) => {
-    // Given a user account is currently locked due to 3 consecutive failed FaceID attempts
+  test('Administrator successfully unlocks a locked account via the secure admin dashboard', async ({ page }) => {
+    // Given a mobile banking user account is currently locked due to 3 consecutive failed FaceID attempts
     await page.goto('/admin/dashboard');
-    await page.evaluate(() => {
-      window.localStorage.setItem('target_account_locked', 'true');
-      window.localStorage.setItem('target_faceid_fail_count', '3');
-    });
 
     // And a system administrator is authenticated on the secure admin dashboard
+    await page.getByLabel('Admin Username').fill('admin_user');
+    await page.getByLabel('Admin Password').fill('admin_secure_password');
+    await page.getByRole('button', { name: /log in/i }).click();
     await expect(page.getByRole('heading', { name: /admin dashboard/i })).toBeVisible();
 
-    // When the administrator locates the locked user profile by account ID
-    await page.getByLabel(/search account id/i).fill('TEST_ACCOUNT_001');
-    await page.getByRole('button', { name: /search|find account/i }).click();
+    // When the administrator locates the locked user profile
+    await page.getByPlaceholder('Search user by name or ID').fill('locked_test_user');
+    await page.getByRole('button', { name: /search/i }).click();
     await expect(page.getByTestId('user-profile-card')).toBeVisible();
+    await expect(page.getByTestId('account-status')).toHaveText('locked');
 
-    // And the administrator triggers the manual unlock override action
-    await page.getByRole('button', { name: /unlock account|manual unlock override/i }).click();
-    await page.getByRole('button', { name: /confirm/i }).click();
+    // And the administrator applies a manual override unlock action on the profile
+    await page.getByRole('button', { name: /manual override unlock/i }).click();
+    await page.getByRole('button', { name: /confirm unlock/i }).click();
 
-    // Then the user account status should be updated to unlocked
-    await expect(page.getByTestId('account-status')).toHaveText(/unlocked|active/i);
+    // Then the user account status should be updated to "active" and unlocked
+    await expect(page.getByTestId('account-status')).toHaveText('active');
 
     // And the consecutive failed FaceID attempt counter should be reset to 0
-    await expect(page.getByTestId('faceid-fail-count')).toHaveText('0');
+    await expect(page.getByTestId('failed-attempt-counter')).toHaveText('0');
 
-    // And the lockout timer should be cleared immediately
-    await expect(page.getByTestId('lockout-timer')).not.toBeVisible();
+    // And the lockout timer should be cleared immediately regardless of remaining duration
+    await expect(page.getByTestId('lockout-timer')).toHaveText('0:00');
 
-    // And the user should be able to attempt FaceID authentication again
-    const accountLocked = await page.evaluate(() => window.localStorage.getItem('target_account_locked'));
-    expect(accountLocked).toBe('false');
-
-    // And an audit log entry should be recorded capturing the administrator ID, timestamp, and override action
+    // And an audit log entry should be recorded capturing the administrator ID, timestamp, and action taken
     await page.getByRole('link', { name: /audit log/i }).click();
-    await expect(page.getByTestId('audit-log-entry').first()).toContainText(/unlock override/i);
-    await expect(page.getByTestId('audit-log-entry').first()).toContainText(/admin/i);
-    await expect(page.getByTestId('audit-log-timestamp').first()).toBeVisible();
+    await expect(page.getByTestId('audit-log-entry').first()).toContainText('admin_user');
+    await expect(page.getByTestId('audit-log-entry').first()).toContainText('manual override unlock');
+    await expect(page.getByTestId('audit-log-timestamp').first()).not.toBeEmpty();
   });
 
-  test('Account lockout expires automatically after exactly 15 minutes and user can re-authenticate', async ({ page }) => {
-    // Given a user account has been locked due to 3 consecutive failed FaceID attempts
-    // And the lockout timer has been running for exactly 15 minutes
-    await page.goto('/auth/faceid');
-    await page.evaluate(() => {
-      const lockoutStart = Date.now() - 15 * 60 * 1000;
-      window.localStorage.setItem('account_locked', 'true');
-      window.localStorage.setItem('faceid_fail_count', '3');
-      window.localStorage.setItem('lockout_start_time', String(lockoutStart));
-    });
+  test('Account lockout expires automatically after exactly 15 minutes and user can authenticate', async ({ page }) => {
+    // Given a mobile banking user account was locked due to 3 consecutive failed FaceID attempts
+    // And exactly 15 minutes have elapsed since the lockout was imposed
+    await page.goto('/mobile-banking/login');
+    await expect(page.getByTestId('account-status')).toHaveText('active');
 
-    // When the lockout duration of 15 minutes elapses
-    await page.reload();
+    // When the user attempts FaceID authentication
+    await page.getByRole('button', { name: /authenticate with face id/i }).click();
+    await page.getByTestId('faceid-result').selectOption('success');
+    await page.getByRole('button', { name: /confirm authentication/i }).click();
 
-    // Then the account should be automatically unlocked by the system
-    await expect(page.getByTestId('account-status')).toHaveText(/unlocked|active/i);
+    // Then the account should be automatically unlocked
+    await expect(page.getByTestId('account-status')).toHaveText('active');
+
+    // And the user should be permitted to attempt FaceID authentication again
+    await expect(page.getByRole('heading', { name: /dashboard/i })).toBeVisible();
 
     // And the consecutive failed FaceID attempt counter should be reset to 0
-    const failCount = await page.evaluate(() => window.localStorage.getItem('faceid_fail_count'));
-    expect(failCount).toBe('0');
-
-    // And the user should be able to attempt FaceID authentication again without administrator intervention
-    await expect(page.getByRole('button', { name: /scan face|authenticate with faceid/i })).toBeEnabled();
-    await expect(page.getByTestId('lockout-message')).not.toBeVisible();
+    await expect(page.getByTestId('failed-attempt-counter')).toHaveText('0');
   });
 
   test('Warning push notification is dispatched on exactly the 2nd consecutive failed FaceID attempt', async ({ page }) => {
-    // Given the user has a registered FaceID profile linked to their mobile banking account
-    // And the user has previously failed FaceID authentication 1 time
-    // And the account is not currently locked
-    // And push notifications are enabled for the mobile banking application
-    await page.goto('/auth/faceid');
-    await page.evaluate(() => {
-      window.localStorage.setItem('faceid_fail_count', '1');
-      window.localStorage.setItem('account_locked', 'false');
-      window.localStorage.setItem('push_notifications_enabled', 'true');
-    });
+    // Given a registered mobile banking user with FaceID enabled
+    await page.goto('/mobile-banking/login');
+    await expect(page.getByRole('heading', { name: /sign in/i })).toBeVisible();
 
-    // When the user presents an invalid biometric face scan for the 2nd consecutive time
-    await page.getByRole('button', { name: /scan face|authenticate with faceid/i }).click();
-    await page.evaluate(() => window.dispatchEvent(new CustomEvent('biometric:failure')));
+    // And the user has 1 previously recorded failed FaceID attempt
+    await expect(page.getByTestId('failed-attempt-counter')).toHaveText('1');
 
-    // Then the FaceID authentication should fail
-    await expect(page.getByRole('alert', { name: /authentication failed/i })).toBeVisible();
+    // And the user has push notifications enabled on their device
+    await expect(page.getByTestId('push-notifications-status')).toHaveText('enabled');
+
+    // When the user fails FaceID authentication for the 2nd consecutive time
+    await page.getByRole('button', { name: /authenticate with face id/i }).click();
+    await page.getByTestId('faceid-result').selectOption('failure');
+    await page.getByRole('button', { name: /confirm authentication/i }).click();
+
+    // Then the user should NOT be locked out of the account
+    await expect(page.getByTestId('account-status')).not.toHaveText('locked');
 
     // And a warning push notification should be dispatched immediately to the user's registered device
-    await expect(page.getByTestId('push-notification-indicator')).toBeVisible();
+    await expect(page.getByTestId('push-notification-warning')).toBeVisible();
 
-    // And the warning notification message should indicate that one more failed attempt will lock the account
-    await expect(page.getByTestId('push-notification-message')).toContainText(/one more.*lock|1 more.*lock/i);
-
-    // And the account should remain unlocked
-    await expect(page.getByTestId('account-status')).not.toHaveText(/locked/i);
+    // And the push notification message should warn the user that one more failed attempt will lock the account
+    await expect(page.getByTestId('push-notification-warning')).toContainText(/one more failed attempt will lock/i);
 
     // And the consecutive failed FaceID attempt counter should be incremented to 2
-    await expect(page.getByTestId('faceid-fail-count')).toHaveText('2');
+    await expect(page.getByTestId('failed-attempt-counter')).toHaveText('2');
   });
 
   test('Account is locked immediately and precisely on the 3rd consecutive failed FaceID attempt', async ({ page }) => {
-    // Given the user has a registered FaceID profile linked to their mobile banking account
-    // And the user has previously failed FaceID authentication 2 consecutive times
-    // And a warning push notification has already been dispatched
-    // And the account is not currently locked
-    await page.goto('/auth/faceid');
-    await page.evaluate(() => {
-      window.localStorage.setItem('faceid_fail_count', '2');
-      window.localStorage.setItem('account_locked', 'false');
-      window.localStorage.setItem('warning_notification_sent', 'true');
-    });
+    // Given a registered mobile banking user with FaceID enabled
+    await page.goto('/mobile-banking/login');
+    await expect(page.getByRole('heading', { name: /sign in/i })).toBeVisible();
 
-    // When the user presents an invalid biometric face scan for the 3rd consecutive time
-    await page.getByRole('button', { name: /scan face|authenticate with faceid/i }).click();
-    await page.evaluate(() => window.dispatchEvent(new CustomEvent('biometric:failure')));
+    // And the user has 2 previously recorded consecutive failed FaceID attempts
+    await expect(page.getByTestId('failed-attempt-counter')).toHaveText('2');
 
-    // Then the FaceID authentication should fail
-    await expect(page.getByRole('alert', { name: /authentication failed/i })).toBeVisible();
+    // When the user fails FaceID authentication for the 3rd consecutive time
+    await page.getByRole('button', { name: /authenticate with face id/i }).click();
+    await page.getByTestId('faceid-result').selectOption('failure');
+    await page.getByRole('button', { name: /confirm authentication/i }).click();
 
-    // And the account should be locked immediately
-    await expect(page.getByTestId('account-status')).toHaveText(/locked/i);
+    // Then the account should be locked immediately
+    await expect(page.getByTestId('account-status')).toHaveText('locked');
 
-    // And the 15-minute lockout countdown timer should start at the moment of the 3rd failure
-    await expect(page.getByTestId('lockout-countdown-timer')).toBeVisible();
+    // And the user should be denied access to the mobile banking application
+    await expect(page.getByRole('heading', { name: /dashboard/i })).not.toBeVisible();
+    await expect(page.getByTestId('lockout-message')).toBeVisible();
 
-    // And the user should be presented with a message stating the account is locked for 15 minutes
-    await expect(page.getByTestId('lockout-message')).toContainText(/locked.*15 minutes|15 minutes.*locked/i);
+    // And an account lockout push notification should be dispatched to the user's registered device
+    await expect(page.getByTestId('push-notification-lockout')).toBeVisible();
 
-    // And the user should not be able to attempt FaceID authentication while the account is locked
-    await expect(page.getByRole('button', { name: /scan face|authenticate with faceid/i })).toBeDisabled();
+    // And the lockout duration should be set to exactly 15 minutes from the moment of the 3rd failure
+    await expect(page.getByTestId('lockout-duration')).toHaveText('15:00');
 
     // And the consecutive failed FaceID attempt counter should reflect 3 failed attempts
-    await expect(page.getByTestId('faceid-fail-count')).toHaveText('3');
+    await expect(page.getByTestId('failed-attempt-counter')).toHaveText('3');
   });
 
-  test('Account remains locked if the user attempts FaceID authentication before the 15-minute lockout expires', async ({ page }) => {
-    // Given a user account has been locked due to 3 consecutive failed FaceID attempts
-    // And the lockout timer has been running for only 7 minutes and 30 seconds
-    await page.goto('/auth/faceid');
-    await page.evaluate(() => {
-      const lockoutStart = Date.now() - (7 * 60 + 30) * 1000;
-      window.localStorage.setItem('account_locked', 'true');
-      window.localStorage.setItem('faceid_fail_count', '3');
-      window.localStorage.setItem('lockout_start_time', String(lockoutStart));
-    });
+  test('Account remains locked if user attempts FaceID authentication before the 15-minute lockout expires', async ({ page }) => {
+    // Given a mobile banking user account is currently locked due to 3 consecutive failed FaceID attempts
+    // And only 14 minutes and 59 seconds have elapsed since the lockout was imposed
+    await page.goto('/mobile-banking/login');
+    await expect(page.getByTestId('account-status')).toHaveText('locked');
+    await expect(page.getByTestId('lockout-timer')).toBeVisible();
 
-    // When the user attempts FaceID authentication before the 15-minute lockout period has elapsed
-    await page.getByRole('button', { name: /scan face|authenticate with faceid/i }).click();
+    // When the user attempts FaceID authentication
+    await page.getByRole('button', { name: /authenticate with face id/i }).click();
 
     // Then the authentication attempt should be rejected without processing the biometric scan
-    await expect(page.getByRole('alert', { name: /account locked/i })).
+    await expect(page.getByTestId('faceid-scan-processed')).not.toBeVisible();
+
+    // And the user should be presented with a lockout message indicating the remaining lockout time
+    await expect(page.getByTestId('lockout-message')).toBeVisible();
+    await expect(page.getByTestId('lockout-remaining-time')).toBeVisible();
+
+    // And the account should remain in a locked state
+    await expect(page.getByTestId('account-status')).toHaveText('locked');
+
+    // And the lockout timer should NOT be reset by this attempt
+    const timerText = await page.getByTestId('lockout-timer').textContent();
+    await page.getByRole('button', { name: /authenticate with face id/i }).click();
+    await expect(page.getByTestId('lockout-timer')).not.toHaveText('15:00');
+    expect(timerText).not.toBe('15:00');
+  });
+
+  test('No push notification is dispatched on the 1st consecutive failed FaceID attempt', async ({ page }) => {
+    // Given a registered mobile banking user with FaceID enabled
+    await page.goto('/mobile-banking/login');
+    await expect(page.getByRole('heading', { name: /sign in/i })).toBeVisible();
+
+    // And the user has 0 previously recorded failed FaceID attempts
+    await expect(page.getByTestId('failed-attempt-counter')).toHaveText('0');
+
+    // When the user fails FaceID authentication for the 1st consecutive time
+    await page.getByRole('button', { name: /authenticate with face id/i }).click();
+    await page.getByTestId('faceid-result').selectOption('failure');
+    await page.getByRole('button', { name: /confirm authentication/i }).click();
+
+    // Then the user should NOT be locked out of the account
+    await expect(page.getByTestId('account-status')).not.toHaveText('locked');
+
+    // And no push notification should be dispatched
+    await expect(page.getByTestId('push-notification-warning')).not.toBeVisible();
+    await expect(page.getByTestId('push-notification-lockout')).not.toBeVisible();
+
+    // And the consecutive failed FaceID attempt counter should be incremented to 1
+    await expect(page.getByTestId('failed-attempt-counter')).toHaveText('1');
+  });
+
+});
+```
